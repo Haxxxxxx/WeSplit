@@ -157,6 +157,15 @@ const SendContactsScreen: React.FC<any> = ({ navigation, route }) => {
     });
   };
 
+  const handleNavigateToContacts = () => {
+    navigation.navigate('Contacts', {
+      action: 'send',
+      onContactSelect: (contact: UserContact) => {
+        handleSelectContact(contact);
+      }
+    });
+  };
+
   const handleTabChange = (tab: 'All' | 'Favorite' | 'Search') => {
     setActiveTab(tab);
     if (tab !== 'Search') {
@@ -276,6 +285,16 @@ const SendContactsScreen: React.FC<any> = ({ navigation, route }) => {
             </Text>
           </TouchableOpacity>
         </View>
+
+        {/* Contacts Button */}
+        <TouchableOpacity
+          style={styles.contactsButton}
+          onPress={handleNavigateToContacts}
+        >
+          <Icon name="users" size={20} color={colors.textLight} />
+          <Text style={styles.contactsButtonText}>Browse All Contacts</Text>
+          <Icon name="arrow-right" size={16} color={colors.textSecondary} />
+        </TouchableOpacity>
 
         
 
