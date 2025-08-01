@@ -49,6 +49,7 @@ export default {
       favicon: "./assets/favicon.png"
     },
     plugins: [
+      "expo-router",
       "./queries.js"
     ],
     extra: {
