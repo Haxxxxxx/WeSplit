@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "index.ts",
   "scripts": {
-    "start": "expo start",
+    "start": "expo start --dev-client",
     "android": "expo run:android",
     "ios": "expo run:ios",
     "web": "expo start --web",
@@ -14,6 +14,7 @@
   },
   "dependencies": {
     "@emailjs/browser": "^4.4.1",
+    "@expo/config-plugins": "~8.0.0",
     "@invertase/react-native-apple-authentication": "^2.4.1",
     "@moonpay/react-native-moonpay-sdk": "^1.1.4",
     "@react-native-async-storage/async-storage": "1.23.1",
@@ -21,7 +22,7 @@
     "@react-native-community/netinfo": "^11.4.1",
     "@react-native-firebase/app": "^22.4.0",
     "@react-native-firebase/auth": "^22.4.0",
-    "@react-native-google-signin/google-signin": "^15.0.0",
+    "@react-native-google-signin/google-signin": "^14.0.0",
     "@react-native/metro-config": "^0.80.1",
     "@react-navigation/bottom-tabs": "^7.2.0",
     "@react-navigation/native": "^7.0.14",
@@ -38,24 +39,28 @@
     "buffer": "^6.0.3",
     "cors": "^2.8.5",
     "dotenv": "^17.0.1",
-    "expo": "~52.0.0",
+    "expo": "~50.0.0",
     "expo-application": "~6.0.2",
     "expo-auth-session": "~6.0.3",
     "expo-camera": "~16.0.18",
     "expo-clipboard": "~7.0.1",
     "expo-constants": "~17.0.3",
     "expo-crypto": "~14.0.2",
+    "expo-dev-client": "~5.0.20",
     "expo-image-picker": "~16.0.6",
     "expo-linking": "~7.0.2",
     "expo-router": "~4.0.5",
     "expo-splash-screen": "~0.29.10",
     "expo-status-bar": "~2.0.1",
-    "expo-system-ui": "~4.0.3",
+    "expo-system-ui": "~3.0.0",
     "expo-web-browser": "~14.0.2",
     "express": "^5.1.0",
     "firebase": "^11.10.0",
     "firebase-admin": "^13.4.0",
     "firebase-functions": "^6.4.0",
+    "metro": "^0.81.0",
+    "metro-config": "^0.81.0",
+    "metro-resolver": "^0.81.0",
     "nodemailer": "^7.0.5",
     "pg": "^8.16.3",
     "process": "^0.11.10",
@@ -83,7 +88,24 @@
     "@types/react": "~18.3.12",
     "@types/react-native-vector-icons": "^6.4.18",
     "babel-plugin-module-resolver": "^5.0.2",
+    "sharp": "^0.34.3",
     "typescript": "~5.8.3"
+  },
+  "overrides": {
+    "metro": "^0.81.0",
+    "metro-config": "^0.81.0",
+    "metro-resolver": "^0.81.0"
+  },
+  "expo": {
+    "doctor": {
+      "reactNativeDirectoryCheck": {
+        "exclude": [
+          "react-native-inappbrowser-reborn",
+          "react-native-bootstrap-icons"
+        ],
+        "listUnknownPackages": false
+      }
+    }
   },
   "private": true
 }

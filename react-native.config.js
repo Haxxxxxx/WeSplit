@@ -2,13 +2,12 @@ module.exports = {
   dependencies: {
     'react-native-vector-icons': {
       platforms: {
-        ios: {
-          sourceDir: '../node_modules/react-native-vector-icons/Fonts'
-        },
         android: {
-          sourceDir: '../node_modules/react-native-vector-icons/Fonts'
-        }
-      }
-    }
-  }
+          sourceDir: '../node_modules/react-native-vector-icons/android',
+          packageImportPath: 'import io.github.react-native-vector-icons.VectorIconsPackage;',
+          packageInstance: 'new VectorIconsPackage()',
+        },
+      },
+    },
+  },
 }; 
