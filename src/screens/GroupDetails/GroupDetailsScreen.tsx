@@ -16,6 +16,34 @@ import TransactionModal from '../../components/TransactionModal';
 import { colors } from '../../theme';
 import { styles } from './styles';
 
+// Component to display expense amount with proper currency conversion
+const ExpenseAmountDisplay: React.FC<{ expense: Expense; realTimeUSDAmounts: Record<string, number> }> = ({ expense, realTimeUSDAmounts }) => {
+  const { currentUser } = useApp().state;
+  
+  // Use real-time conversion if available, otherwise fallback to hardcoded rate
+  const getDisplayAmount = () => {
+    if (realTimeUSDAmounts[expense.id]) {
+      return realTimeUSDAmounts[expense.id];
+    }
+    
+    // Fallback to hardcoded rate
+    const currency = expense.currency || 'SOL';
+    const rate = currency === 'SOL' ? 200 : (currency === 'USDC' ? 1 : 100);
+    return expense.amount * rate;
+  };
+
+  const displayAmount = getDisplayAmount();
+
+  return (
+    <Text style={[
+      styles.expenseUserAmount,
+      expense.paid_by === currentUser?.id ? styles.positiveAmount : styles.neutralAmount
+    ]}>
+      ${displayAmount.toFixed(2)}
+    </Text>
+  );
+};
+
 const GroupDetailsScreen: React.FC<any> = ({ navigation, route }) => {
   // Validate and extract groupId from route params
   const groupId = route.params?.groupId;
@@ -89,6 +117,10 @@ const GroupDetailsScreen: React.FC<any> = ({ navigation, route }) => {
 
   // Prevent infinite loops by tracking if we've already loaded data
   const [hasLoadedData, setHasLoadedData] = useState(false);
+  
+  // State for real-time currency conversion
+  const [realTimeUSDAmounts, setRealTimeUSDAmounts] = useState<Record<string, number>>({});
+  const [conversionLoading, setConversionLoading] = useState(false);
 
   // Load real balance data function with comprehensive error handling
   const loadRealBalances = useCallback(async () => {
@@ -108,9 +140,16 @@ const GroupDetailsScreen: React.FC<any> = ({ navigation, route }) => {
     setDataError(null);
 
     try {
+      // Ensure we have a consistent current user ID
+      const currentUserId = currentUser?.id ? String(currentUser.id) : null;
+      
+      if (__DEV__) {
+        console.log('🔍 GroupDetailsScreen: Loading balances with currentUserId:', currentUserId);
+      }
+      
       // Load members and expenses in parallel
       const [members, expenses] = await Promise.all([
-        firebaseDataService.group.getGroupMembers(groupId.toString(), false, currentUser?.id ? String(currentUser.id) : undefined),
+        firebaseDataService.group.getGroupMembers(groupId.toString(), false, currentUserId),
         firebaseDataService.expense.getGroupExpenses(groupId.toString())
       ]);
 
@@ -171,7 +210,7 @@ const GroupDetailsScreen: React.FC<any> = ({ navigation, route }) => {
       const balances = await calculateGroupBalances(groupForCalculation, {
         normalizeToUSDC: true,
         includeZeroBalances: true,
-        currentUserId: currentUser?.id?.toString()
+        currentUserId: currentUserId
       });
 
       setRealGroupBalances(balances);
@@ -230,19 +269,23 @@ const GroupDetailsScreen: React.FC<any> = ({ navigation, route }) => {
     }
   }, [groupId, hasLoadedData, groupLoading]); // Removed loadRealBalances from dependencies
 
-  // Start group listener when component mounts
+  // Start group listener when component mounts (only once)
   useEffect(() => {
     if (groupId) {
-      // Group listener started
+      if (__DEV__) {
+        console.log('🔍 GroupDetailsScreen: Starting group listener for:', groupId);
+      }
       startGroupListener(groupId.toString());
       
       // Cleanup function to stop listener when component unmounts
       return () => {
-        // Group listener stopped
+        if (__DEV__) {
+          console.log('🔍 GroupDetailsScreen: Stopping group listener for:', groupId);
+        }
         stopGroupListener(groupId.toString());
       };
     }
-  }, [groupId, startGroupListener, stopGroupListener]);
+  }, [groupId]); // Removed startGroupListener and stopGroupListener from dependencies to prevent restarts
 
   // Also load group data if not available
   useEffect(() => {
@@ -250,6 +293,58 @@ const GroupDetailsScreen: React.FC<any> = ({ navigation, route }) => {
       // The useGroupData hook should handle this, but let's ensure it's triggered
     }
   }, [groupId, group, groupLoading]);
+
+  // Function to update real-time currency conversion
+  const updateRealTimeConversion = useCallback(async () => {
+    if (individualExpenses.length === 0 || conversionLoading) return;
+    
+    setConversionLoading(true);
+    try {
+      const conversionPromises = individualExpenses.map(async (expense) => {
+        if (!expense || expense.amount === undefined) return null;
+        const currency = expense.currency || 'SOL';
+        const amount = expense.amount || 0;
+        
+        try {
+          if (currency === 'USDC') {
+            return { id: expense.id, amount };
+          } else {
+            const converted = await convertToUSDC(amount, currency);
+            return { id: expense.id, amount: converted };
+          }
+        } catch (error) {
+          console.error(`Error converting expense ${expense.id} to USD:`, error);
+          return null;
+        }
+      });
+      
+      const results = await Promise.all(conversionPromises);
+      const newAmounts: Record<string, number> = {};
+      
+      results.forEach(result => {
+        if (result) {
+          newAmounts[result.id] = result.amount;
+        }
+      });
+      
+      setRealTimeUSDAmounts(newAmounts);
+    } catch (error) {
+      console.error('Error updating real-time conversion:', error);
+    } finally {
+      setConversionLoading(false);
+    }
+  }, [individualExpenses, conversionLoading]);
+
+  // Update real-time conversion when expenses change (with debounce)
+  useEffect(() => {
+    if (individualExpenses.length > 0) {
+      const timeoutId = setTimeout(() => {
+        updateRealTimeConversion();
+      }, 500); // Debounce for 500ms
+      
+      return () => clearTimeout(timeoutId);
+    }
+  }, [individualExpenses, updateRealTimeConversion]);
 
   // Track if modal was opened from route params to prevent reopening
   const [modalOpenedFromParams, setModalOpenedFromParams] = useState(false);
@@ -364,15 +459,35 @@ const GroupDetailsScreen: React.FC<any> = ({ navigation, route }) => {
       let totalAmountDisplay = '$0.00';
 
       if (individualExpenses.length > 0) {
+        // Use actual conversion rates from real-time amounts when available
         totalAmountUSD = individualExpenses.reduce((sum, expense) => {
           if (!expense || expense.amount === undefined) return sum;
           const currency = expense.currency || 'SOL';
           const amount = expense.amount || 0;
-          // Use consistent conversion rates
-          const rate = currency === 'SOL' ? 200 : (currency === 'USDC' ? 1 : 100);
-          return sum + (amount * rate);
+          
+          // Use real-time conversion if available, otherwise fallback
+          if (realTimeUSDAmounts[expense.id]) {
+            return sum + realTimeUSDAmounts[expense.id];
+          } else {
+            // Use more accurate fallback rates
+            const rate = currency === 'SOL' ? 162 : (currency === 'USDC' ? 1 : 100);
+            return sum + (amount * rate);
+          }
         }, 0);
         totalAmountDisplay = `$${totalAmountUSD.toFixed(2)}`;
+        
+        if (__DEV__) {
+          console.log('💰 GroupDetailsScreen: Total spending calculation:', {
+            totalAmountUSD,
+            individualExpenses: individualExpenses.map(e => ({
+              id: e.id,
+              amount: e.amount,
+              currency: e.currency,
+              realTimeUSD: realTimeUSDAmounts[e.id],
+              calculated: realTimeUSDAmounts[e.id] || (e.amount * (e.currency === 'SOL' ? 162 : 1))
+            }))
+          });
+        }
       }
 
       // Calculate user-specific amounts based on the unified balance calculation
@@ -393,22 +508,36 @@ const GroupDetailsScreen: React.FC<any> = ({ navigation, route }) => {
             expense && String(expense.paid_by) === currentUserId
           );
 
+          // Convert user's paid expenses to USD using real-time rates when available
           userPaidUSD = userPaidExpenses.reduce((sum, expense) => {
             if (!expense || expense.amount === undefined) return sum;
             const currency = expense.currency || 'SOL';
             const amount = expense.amount || 0;
-            // Use consistent conversion rates
-            const rate = currency === 'SOL' ? 200 : (currency === 'USDC' ? 1 : 100);
-            return sum + (amount * rate);
+            
+            // Use real-time conversion if available, otherwise fallback
+            if (realTimeUSDAmounts[expense.id]) {
+              return sum + realTimeUSDAmounts[expense.id];
+            } else {
+              // Use more accurate fallback rates
+              const rate = currency === 'SOL' ? 162 : (currency === 'USDC' ? 1 : 100);
+              return sum + (amount * rate);
+            }
           }, 0);
 
-          // Calculate total group expenses and user's share
+          // Calculate total group expenses and user's share using real-time rates when available
           const totalGroupExpenses = individualExpenses.reduce((sum, expense) => {
             if (!expense || expense.amount === undefined) return sum;
             const currency = expense.currency || 'SOL';
             const amount = expense.amount || 0;
-            const rate = currency === 'SOL' ? 200 : (currency === 'USDC' ? 1 : 100);
-            return sum + (amount * rate);
+            
+            // Use real-time conversion if available, otherwise fallback
+            if (realTimeUSDAmounts[expense.id]) {
+              return sum + realTimeUSDAmounts[expense.id];
+            } else {
+              // Use more accurate fallback rates
+              const rate = currency === 'SOL' ? 162 : (currency === 'USDC' ? 1 : 100);
+              return sum + (amount * rate);
+            }
           }, 0);
 
           const memberCount = group.member_count || 1;
@@ -1013,12 +1142,7 @@ const GroupDetailsScreen: React.FC<any> = ({ navigation, route }) => {
                         <Text style={styles.expenseUserStatus}>
                           {expense.paid_by === currentUser?.id ? 'You paid' : 'Group expense'}
                         </Text>
-                        <Text style={[
-                          styles.expenseUserAmount,
-                          expense.paid_by === currentUser?.id ? styles.positiveAmount : styles.neutralAmount
-                        ]}>
-                          ${expense.amount.toFixed(2)}
-                        </Text>
+                        <ExpenseAmountDisplay expense={expense} realTimeUSDAmounts={realTimeUSDAmounts} />
                       </View>
                     </View>
                   </TouchableOpacity>

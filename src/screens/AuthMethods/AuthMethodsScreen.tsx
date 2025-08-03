@@ -18,7 +18,7 @@ import { useApp } from '../../context/AppContext';
 import { useWallet } from '../../context/WalletContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { firebaseAuth, firestoreService, auth } from '../../config/firebase';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
 import { db } from '../../config/firebase';
 import { solanaAppKitService } from '../../services/solanaAppKitService';
 import { userWalletService } from '../../services/userWalletService';
@@ -27,7 +27,7 @@ import { socialAuthService } from '../../services/socialAuthService';
 import { userDataService } from '../../services/userDataService';
 import * as AuthSession from 'expo-auth-session';
 import { loginWithGoogle, getAuthConfig, testAuthConfiguration } from '../../services/firebaseAuthService';
-import { sendVerificationCode } from '../../services/emailAuthService';
+import { sendVerificationCode } from '../../services/firebaseFunctionsService';
 
 // Background wallet creation: Automatically creates Solana wallet for new users
 // without blocking the UI or showing any modals
@@ -189,6 +189,28 @@ const AuthMethodsScreen: React.FC = () => {
     try {
       // Check if user has already verified within the last 30 days
       const hasVerifiedWithin30Days = await firestoreService.hasVerifiedWithin30Days(sanitizedEmail);
+      
+      // If verification check failed, try to fix invalid lastVerifiedAt
+      if (!hasVerifiedWithin30Days) {
+        try {
+          const wasFixed = await firestoreService.fixInvalidLastVerifiedAt(sanitizedEmail);
+          if (wasFixed) {
+            if (__DEV__) {
+              console.log('📅 Fixed invalid lastVerifiedAt, rechecking verification status');
+            }
+            // Recheck after fixing
+            const recheckResult = await firestoreService.hasVerifiedWithin30Days(sanitizedEmail);
+            if (recheckResult) {
+              if (__DEV__) {
+                console.log('✅ User now verified within 30 days after fix');
+              }
+              // Continue with the existing user flow below
+            }
+          }
+        } catch (fixError) {
+          console.error('Error fixing lastVerifiedAt:', fixError);
+        }
+      }
 
       if (hasVerifiedWithin30Days) {
         if (__DEV__) {
@@ -227,24 +249,53 @@ const AuthMethodsScreen: React.FC = () => {
                   firebaseUser = await firebaseAuth.createUserWithEmail(sanitizedEmail, temporaryPassword);
                   if (__DEV__) { console.log('✅ Created new Firebase Auth user for existing Firestore user'); }
                 } catch (createError: any) {
-                  if (createError.code === 'auth/email-already-in-use') {
+                  if (createError.code === 'auth/email-already-in-use' || createError.name === 'FirebaseAuthWarning') {
                     // User already exists in Firebase Auth, we need to handle this
                     // For now, we'll use the existing user data and skip Firebase Auth
                     if (__DEV__) { console.warn('⚠️ User exists in Firebase Auth but we can\'t sign in without password (this is normal)'); }
 
                     // Check if existing user should skip onboarding
                     const shouldSkipOnboarding = await firestoreService.shouldSkipOnboardingForExistingUser(userData);
+                    
+                    // Fix onboarding status if needed
+                    let updatedUserData = userData;
+                    try {
+                      const wasFixed = await firestoreService.fixCompletedOnboardingStatus(userData);
+                      if (wasFixed) {
+                        if (__DEV__) {
+                          console.log('🔧 Fixed onboarding status, rechecking');
+                        }
+                        // Refetch user data to get updated hasCompletedOnboarding
+                        const userRef = doc(db, 'users', userData.id);
+                        const userSnap = await getDoc(userRef);
+                        if (userSnap.exists()) {
+                          updatedUserData = userSnap.data();
+                          if (__DEV__) {
+                            console.log('📋 Refetched user data after fix:', updatedUserData);
+                          }
+                        }
+                        // Recheck after fixing
+                        const recheckResult = await firestoreService.shouldSkipOnboardingForExistingUser(updatedUserData);
+                        if (recheckResult) {
+                          if (__DEV__) {
+                            console.log('✅ User now has completed onboarding after fix');
+                          }
+                        }
+                      }
+                    } catch (fixError) {
+                      console.error('Error fixing onboarding status:', fixError);
+                    }
 
-                    // Use the Firestore user data directly
+                    // Use the updated Firestore user data
                     const transformedUser = {
-                      id: userData.id,
-                      name: userData.name,
-                      email: userData.email,
-                      wallet_address: userData.wallet_address || '',
-                      wallet_public_key: userData.wallet_public_key || '',
-                      created_at: userData.created_at,
-                      avatar: userData.avatar || '',
-                      hasCompletedOnboarding: shouldSkipOnboarding
+                      id: updatedUserData.id,
+                      name: updatedUserData.name,
+                      email: updatedUserData.email,
+                      wallet_address: updatedUserData.wallet_address || '',
+                      wallet_public_key: updatedUserData.wallet_public_key || '',
+                      created_at: updatedUserData.created_at,
+                      avatar: updatedUserData.avatar || '',
+                      hasCompletedOnboarding: updatedUserData.hasCompletedOnboarding || shouldSkipOnboarding
                     };
 
                     // Update the global app context with the authenticated user
@@ -254,25 +305,22 @@ const AuthMethodsScreen: React.FC = () => {
                     const needsProfile = !transformedUser.name || transformedUser.name.trim() === '';
 
                     if (needsProfile) {
-                      console.log('🔄 User needs to create profile (no name), navigating to CreateProfile');
                       navigation.reset({
                         index: 0,
-                        routes: [{ name: 'CreateProfile', params: { email: transformedUser.email } }],
+                        routes: [{ name: 'CreateProfile' }],
                       });
-                    } else if (transformedUser.hasCompletedOnboarding) {
-                      console.log('✅ User completed onboarding, navigating to Dashboard');
+                    } else if (shouldSkipOnboarding) {
                       navigation.reset({
                         index: 0,
                         routes: [{ name: 'Dashboard' }],
                       });
                     } else {
-                      console.log('🔄 User needs onboarding, navigating to Onboarding');
                       navigation.reset({
                         index: 0,
                         routes: [{ name: 'Onboarding' }],
                       });
                     }
-                    return;
+                    return; // Exit early to avoid showing error
                   } else {
                     throw createError;
                   }
@@ -288,17 +336,46 @@ const AuthMethodsScreen: React.FC = () => {
 
             // Check if existing user should skip onboarding
             const shouldSkipOnboarding = await firestoreService.shouldSkipOnboardingForExistingUser(userData);
+            
+            // Fix onboarding status if needed
+            let updatedUserData = userData;
+            try {
+              const wasFixed = await firestoreService.fixCompletedOnboardingStatus(userData);
+              if (wasFixed) {
+                if (__DEV__) {
+                  console.log('🔧 Fixed onboarding status, rechecking');
+                }
+                // Refetch user data to get updated hasCompletedOnboarding
+                const userRef = doc(db, 'users', userData.id);
+                const userSnap = await getDoc(userRef);
+                if (userSnap.exists()) {
+                  updatedUserData = userSnap.data();
+                  if (__DEV__) {
+                    console.log('📋 Refetched user data after fix:', updatedUserData);
+                  }
+                }
+                // Recheck after fixing
+                const recheckResult = await firestoreService.shouldSkipOnboardingForExistingUser(updatedUserData);
+                if (recheckResult) {
+                  if (__DEV__) {
+                    console.log('✅ User now has completed onboarding after fix');
+                  }
+                }
+              }
+            } catch (fixError) {
+              console.error('Error fixing onboarding status:', fixError);
+            }
 
-            // Use the existing user data
+            // Use the updated user data
             const transformedUser = {
-              id: userData.id,
-              name: userData.name,
-              email: userData.email,
-              wallet_address: userData.wallet_address || '',
-              wallet_public_key: userData.wallet_public_key || '',
-              created_at: userData.created_at,
-              avatar: userData.avatar || '',
-              hasCompletedOnboarding: shouldSkipOnboarding
+              id: updatedUserData.id,
+              name: updatedUserData.name,
+              email: updatedUserData.email,
+              wallet_address: updatedUserData.wallet_address || '',
+              wallet_public_key: updatedUserData.wallet_public_key || '',
+              created_at: updatedUserData.created_at,
+              avatar: updatedUserData.avatar || '',
+              hasCompletedOnboarding: updatedUserData.hasCompletedOnboarding || shouldSkipOnboarding
             };
 
             // Update the global app context with the authenticated user
@@ -352,11 +429,12 @@ const AuthMethodsScreen: React.FC = () => {
       }
           } catch (error: any) {
         // Convert expected errors to warnings
-        if (error.code === 'auth/email-already-in-use') {
+        if (error.code === 'auth/email-already-in-use' || error.name === 'FirebaseAuthWarning') {
           if (__DEV__) {
             console.warn('Expected Firebase Auth error (user already exists):', error.message);
           }
-          // Continue with the flow since we handle this case above
+          // Don't show error alert for existing accounts - this is expected behavior
+          return;
         } else {
           console.error('Error in email authentication:', error);
 

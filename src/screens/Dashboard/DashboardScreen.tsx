@@ -203,14 +203,14 @@ const DashboardScreen: React.FC<any> = ({ navigation }) => {
   // Load user wallet balance when component mounts or wallet connection changes
   useEffect(() => {
     loadUserCreatedWalletBalance();
-  }, [currentUser?.id, updateUser]); // Add updateUser dependency
+  }, [currentUser?.id]); // Remove updateUser dependency to prevent infinite loops
 
   // Reload app wallet balance when app wallet state changes (for consistency)
   useEffect(() => {
     if (currentUser?.id) {
-    loadUserCreatedWalletBalance();
+      loadUserCreatedWalletBalance();
     }
-  }, [appWalletConnected, currentUser?.id, updateUser]); // Add updateUser dependency
+  }, [appWalletConnected, currentUser?.id]); // Remove updateUser dependency to prevent infinite loops
 
   // Convert group amounts to USD for display with proper currency handling
   const convertGroupAmountsToUSD = useCallback(async (groups: GroupWithDetails[]) => {
@@ -245,7 +245,7 @@ const DashboardScreen: React.FC<any> = ({ navigation }) => {
                   let rate = 1;
                   switch (currency) {
                     case 'SOL':
-                      rate = 200;
+                      rate = 162; // Updated to more accurate rate
                       break;
                     case 'USDC':
                     case 'USDT':
@@ -463,10 +463,14 @@ const DashboardScreen: React.FC<any> = ({ navigation }) => {
         return cachedSummary;
       }
 
-      // Calculate total amount from expenses_by_currency
+      // Calculate total amount from expenses_by_currency with proper USD conversion
       if (group.expenses_by_currency && Array.isArray(group.expenses_by_currency) && group.expenses_by_currency.length > 0) {
         totalAmount = group.expenses_by_currency.reduce((sum, expense) => {
-          return sum + (expense.total_amount || 0);
+          const amount = expense.total_amount || 0;
+          const currency = expense.currency || 'SOL';
+          // Convert to USD using accurate rates
+          const rate = currency === 'SOL' ? 162 : (currency === 'USDC' ? 1 : 100);
+          return sum + (amount * rate);
         }, 0);
       }
 
@@ -509,10 +513,14 @@ const DashboardScreen: React.FC<any> = ({ navigation }) => {
         let memberCount = group.member_count || group.members?.length || 0;
         let expenseCount = group.expense_count || group.expenses?.length || 0;
 
-        // Calculate total amount from expenses_by_currency
+        // Calculate total amount from expenses_by_currency with proper USD conversion
         if (group.expenses_by_currency && Array.isArray(group.expenses_by_currency) && group.expenses_by_currency.length > 0) {
           totalAmount = group.expenses_by_currency.reduce((sum, expense) => {
-            return sum + (expense.total_amount || 0);
+            const amount = expense.total_amount || 0;
+            const currency = expense.currency || 'SOL';
+            // Convert to USD using accurate rates
+            const rate = currency === 'SOL' ? 162 : (currency === 'USDC' ? 1 : 100);
+            return sum + (amount * rate);
           }, 0);
         } else {
           // If expenses_by_currency is empty, fetch individual expenses
@@ -536,7 +544,7 @@ const DashboardScreen: React.FC<any> = ({ navigation }) => {
               
               // Convert to USD for display
               totalAmount = Object.entries(currencyTotals).reduce((sum, [currency, total]) => {
-                const rate = currency === 'SOL' ? 200 : (currency === 'USDC' ? 1 : 100);
+                const rate = currency === 'SOL' ? 162 : (currency === 'USDC' ? 1 : 100);
                 return sum + (total * rate);
               }, 0);
               

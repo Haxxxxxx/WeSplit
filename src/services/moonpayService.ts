@@ -1,4 +1,4 @@
-import { apiRequest } from '../config/api';
+// Removed apiRequest import - using stub functions instead
 
 // MoonPay direct URL parameters (using your real API key)
 const MOONPAY_DIRECT_CONFIG = {
@@ -91,12 +91,17 @@ export async function createMoonPayURL(walletAddress: string, amount?: number, c
 }
 
 export async function checkMoonPayStatus(transactionId: string): Promise<MoonPayStatusResponse> {
-  try {
-    return await apiRequest<MoonPayStatusResponse>(`/api/moonpay/status/${transactionId}`);
-  } catch (e) {
-    console.error('Error checking MoonPay status:', e);
-    throw new Error('Unable to check transaction status. Please contact support if needed.');
-  }
+  // Stub function - MoonPay status checking is not implemented yet
+  if (__DEV__) { console.log('🔍 MoonPay: Status check not implemented for transaction:', transactionId); }
+  
+  // Return a mock response for now
+  return {
+    transactionId,
+    status: 'pending',
+    amount: '0',
+    currency: 'USDC',
+    timestamp: new Date().toISOString()
+  };
 }
 
 export function openMoonPayInBrowser(url: string): void {

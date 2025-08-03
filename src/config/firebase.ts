@@ -151,9 +151,20 @@ export const firebaseAuth = {
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, temporaryPassword);
       return userCredential.user;
-    } catch (error) {
-      console.error('Error creating user with email:', error);
-      throw error;
+    } catch (error: any) {
+      // Handle expected errors gracefully
+      if (error.code === 'auth/email-already-in-use') {
+        if (__DEV__) {
+          console.warn('⚠️ Expected Firebase Auth error (user already exists):', error.message);
+        }
+        // Re-throw as a warning instead of error
+        const warningError = new Error(`User already exists: ${error.message}`);
+        warningError.name = 'FirebaseAuthWarning';
+        throw warningError;
+      } else {
+        console.error('Error creating user with email:', error);
+        throw error;
+      }
     }
   },
 
@@ -323,19 +334,53 @@ export const firestoreService = {
       const querySnapshot = await getDocs(q);
       
       if (querySnapshot.empty) {
+        if (__DEV__) {
+          console.log('📅 No user found for email:', email);
+        }
         return false; // User doesn't exist, needs verification
       }
       
       const userDoc = querySnapshot.docs[0];
       const userData = userDoc.data();
+      
+      if (__DEV__) {
+        console.log('📅 User data for verification check:', {
+          email,
+          lastVerifiedAt: userData.lastVerifiedAt,
+          lastLoginAt: userData.lastLoginAt,
+          created_at: userData.created_at,
+          hasCompletedOnboarding: userData.hasCompletedOnboarding
+        });
+      }
+      
       const lastVerifiedAt = userData.lastVerifiedAt;
       
       if (!lastVerifiedAt) {
+        if (__DEV__) {
+          console.log('📅 No lastVerifiedAt found for user:', email);
+        }
         return false; // No verification record, needs verification
       }
       
       // Check if last verification was within the last 30 days
-      const lastVerified = new Date(lastVerifiedAt);
+      let lastVerified: Date;
+      try {
+        lastVerified = new Date(lastVerifiedAt);
+        
+        // Check if the date is valid
+        if (isNaN(lastVerified.getTime())) {
+          if (__DEV__) {
+            console.log('📅 Invalid lastVerifiedAt date:', lastVerifiedAt);
+          }
+          return false; // Invalid date, needs verification
+        }
+      } catch (dateError) {
+        if (__DEV__) {
+          console.log('📅 Error parsing lastVerifiedAt:', lastVerifiedAt, dateError);
+        }
+        return false; // Error parsing date, needs verification
+      }
+      
       const now = new Date();
       const thirtyDaysAgo = new Date(now.getTime() - (30 * 24 * 60 * 60 * 1000));
       
@@ -366,6 +411,18 @@ export const firestoreService = {
       
       if (!querySnapshot.empty) {
         const userDoc = querySnapshot.docs[0];
+        const userData = userDoc.data();
+        
+        // Check if lastVerifiedAt exists and is valid
+        const hasValidLastVerifiedAt = userData.lastVerifiedAt && 
+          !isNaN(new Date(userData.lastVerifiedAt).getTime());
+        
+        if (!hasValidLastVerifiedAt) {
+          if (__DEV__) {
+            console.log('📅 Fixing missing or invalid lastVerifiedAt for user:', email);
+          }
+        }
+        
         await updateDoc(userDoc.ref, {
           lastVerifiedAt: new Date().toISOString(),
           lastLoginAt: new Date().toISOString()
@@ -380,11 +437,66 @@ export const firestoreService = {
     }
   },
 
+  // Fix existing users with invalid lastVerifiedAt
+  async fixInvalidLastVerifiedAt(email: string) {
+    try {
+      // Find user by email
+      const usersRef = collection(db, 'users');
+      const q = query(usersRef, where('email', '==', email));
+      const querySnapshot = await getDocs(q);
+      
+      if (!querySnapshot.empty) {
+        const userDoc = querySnapshot.docs[0];
+        const userData = userDoc.data();
+        
+        // Check if lastVerifiedAt is invalid or missing
+        const lastVerifiedAt = userData.lastVerifiedAt;
+        const isValidDate = lastVerifiedAt && !isNaN(new Date(lastVerifiedAt).getTime());
+        
+        if (!isValidDate) {
+          if (__DEV__) {
+            console.log('📅 Fixing invalid lastVerifiedAt for user:', email, 'Current value:', lastVerifiedAt);
+          }
+          
+          // Set to current time if invalid
+          await updateDoc(userDoc.ref, {
+            lastVerifiedAt: new Date().toISOString(),
+            lastLoginAt: new Date().toISOString()
+          });
+          
+          if (__DEV__) {
+            console.log('✅ Fixed lastVerifiedAt for user:', email);
+          }
+          
+          return true; // Fixed
+        }
+      }
+      
+      return false; // No fix needed
+    } catch (error) {
+      console.error('Error fixing lastVerifiedAt:', error);
+      return false;
+    }
+  },
+
   // Check if existing user should be considered as having completed onboarding
   async shouldSkipOnboardingForExistingUser(userData: any): Promise<boolean> {
     try {
+      if (__DEV__) {
+        console.log('🔍 Checking onboarding status for user:', {
+          id: userData.id,
+          name: userData.name,
+          wallet_address: userData.wallet_address,
+          hasCompletedOnboarding: userData.hasCompletedOnboarding,
+          lastVerifiedAt: userData.lastVerifiedAt
+        });
+      }
+
       // If user explicitly has hasCompletedOnboarding field, use that
       if (userData.hasCompletedOnboarding !== undefined) {
+        if (__DEV__) {
+          console.log('📋 User has explicit hasCompletedOnboarding field:', userData.hasCompletedOnboarding);
+        }
         return userData.hasCompletedOnboarding;
       }
 
@@ -427,6 +539,46 @@ export const firestoreService = {
     } catch (error) {
       console.error('Error checking onboarding status for existing user:', error);
       return false; // Default to requiring onboarding on error
+    }
+  },
+
+  // Fix users who have completed onboarding but still have hasCompletedOnboarding: false
+  async fixCompletedOnboardingStatus(userData: any): Promise<boolean> {
+    try {
+      if (__DEV__) {
+        console.log('🔧 Checking if user needs onboarding status fix:', {
+          id: userData.id,
+          name: userData.name,
+          wallet_address: userData.wallet_address,
+          hasCompletedOnboarding: userData.hasCompletedOnboarding
+        });
+      }
+
+      // Check if user has indicators of completed onboarding
+      const hasWallet = userData.wallet_address && userData.wallet_address.trim() !== '';
+      const hasName = userData.name && userData.name.trim() !== '';
+      const hasVerificationHistory = userData.lastVerifiedAt;
+      const currentOnboardingStatus = userData.hasCompletedOnboarding;
+
+      // If user has completed onboarding indicators but hasCompletedOnboarding is false, fix it
+      if ((hasWallet || hasName || hasVerificationHistory) && currentOnboardingStatus === false) {
+        if (__DEV__) {
+          console.log('🔧 Fixing onboarding status for user:', userData.id);
+        }
+        
+        await this.updateExistingUserOnboardingStatus(userData.id, true);
+        
+        if (__DEV__) {
+          console.log('✅ Fixed onboarding status for user:', userData.id);
+        }
+        
+        return true; // Fixed
+      }
+      
+      return false; // No fix needed
+    } catch (error) {
+      console.error('Error fixing onboarding status:', error);
+      return false;
     }
   },
 

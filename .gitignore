@@ -32,9 +32,27 @@ yarn-error.*
 
 # local env files
 .env*.local
+.env
+.env.production
+.env.development
 
 # typescript
 *.tsbuildinfo
 firebase-functions/.env
 
 backend/.env
+
+# Build artifacts
+*.apk
+*.aab
+*.ipa
+*.app
+build/
+dist/
+
+# Security
+*.pem
+*.key
+*.p12
+*.jks
+*.keystore
