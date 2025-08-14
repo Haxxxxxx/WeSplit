@@ -74,6 +74,10 @@ WeSplit-Development-*.apk
 **/stripe.js
 **/google-oauth.js
 
+# Configuration locale
+config.local.js
+config.js
+
 # Logs
 *.log
 logs/
