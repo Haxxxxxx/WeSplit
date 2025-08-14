@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Image, TouchableOpacity, ScrollView, Alert, SafeAreaView, Switch, ActivityIndicator } from 'react-native';
+import { View, Text, Image, TouchableOpacity, ScrollView, Alert, SafeAreaView, Switch, ActivityIndicator, Linking } from 'react-native';
 import Icon from '../../components/Icon';
 import NavBar from '../../components/NavBar';
 import { useApp } from '../../context/AppContext';
@@ -122,7 +122,7 @@ const ProfileScreen: React.FC<any> = ({ navigation }) => {
   };
 
   const handleHelpCenter = () => {
-    Alert.alert('Help Center', 'Help center feature coming soon!');
+    Linking.openURL('https://t.me/wesplit_support_bot');
   };
 
   const handleFAQ = () => {

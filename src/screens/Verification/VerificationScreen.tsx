@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, TextInput, Image, Alert, ActivityIndicator, SafeAreaView } from 'react-native';
+import { View, Text, TouchableOpacity, TextInput, Image, Alert, ActivityIndicator, SafeAreaView, Linking } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { styles, BG_COLOR, GREEN, GRAY } from './styles';
 import { verifyCode, sendVerificationCode } from '../../services/firebaseAuthService';
@@ -223,7 +223,7 @@ const VerificationScreen: React.FC = () => {
 
       {/* Help Link */}
       <View style={styles.helpSection}>
-        <TouchableOpacity>
+        <TouchableOpacity onPress={() => Linking.openURL('https://t.me/wesplit_support_bot')}>
           <Text style={styles.helpText}>Need help?</Text>
         </TouchableOpacity>
       </View>

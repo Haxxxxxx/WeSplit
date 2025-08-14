@@ -9,7 +9,8 @@ import {
   Alert,
   ScrollView,
   KeyboardAvoidingView,
-  Platform
+  Platform,
+  Linking
 } from 'react-native';
 import { useNavigation, NavigationProp } from '@react-navigation/native';
 import { styles } from './styles';
@@ -577,7 +578,7 @@ const AuthMethodsScreen: React.FC = () => {
 
         {/* Help Link */}
         <View style={styles.helpSection}>
-          <TouchableOpacity>
+          <TouchableOpacity onPress={() => Linking.openURL('https://t.me/wesplit_support_bot')}>
             <Text style={styles.helpText}>Need help?</Text>
           </TouchableOpacity>
         </View>

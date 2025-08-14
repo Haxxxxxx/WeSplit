@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, Image, SafeAreaView, StatusBar } from 'react-native';
+import { View, Text, TouchableOpacity, Image, SafeAreaView, StatusBar, Linking } from 'react-native';
 import { styles } from './styles';
 import { colors } from '../../theme';
 
@@ -51,7 +51,7 @@ const GetStartedScreen: React.FC<GetStartedScreenProps> = ({ navigation }) => {
 
         {/* Help Link */}
         <View style={styles.helpSection}>
-          <TouchableOpacity>
+          <TouchableOpacity onPress={() => Linking.openURL('https://t.me/wesplit_support_bot')}>
             <Text style={styles.helpText}>Need help?</Text>
           </TouchableOpacity>
         </View>

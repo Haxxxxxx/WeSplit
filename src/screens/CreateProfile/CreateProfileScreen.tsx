@@ -11,6 +11,7 @@ import {
   ScrollView,
   ActionSheetIOS,
   Platform,
+  Linking,
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useApp } from '../../context/AppContext';
@@ -255,9 +256,9 @@ const CreateProfileScreen: React.FC = () => {
 
       {/* Help Link */}
       <View style={styles.helpSection}>
-        <TouchableOpacity>
-        <Text style={styles.helpText}>Need help?</Text>
-      </TouchableOpacity>
+        <TouchableOpacity onPress={() => Linking.openURL('https://t.me/wesplit_support_bot')}>
+          <Text style={styles.helpText}>Need help?</Text>
+        </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
