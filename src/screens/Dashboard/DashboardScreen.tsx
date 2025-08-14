@@ -33,6 +33,48 @@ import { userWalletService, UserWalletBalance } from '../../services/userWalletS
 import { firebaseTransactionService } from '../../services/firebaseDataService';
 import { generateProfileLink } from '../../services/deepLinkHandler';
 
+// Avatar component with loading state and error handling
+const AvatarComponent = ({ avatar, displayName, style }: { avatar?: string, displayName: string, style: any }) => {
+  const [isLoading, setIsLoading] = useState(false);
+  const [hasError, setHasError] = useState(false);
+
+  useEffect(() => {
+    if (avatar && avatar.trim() !== '') {
+      setIsLoading(true);
+      setHasError(false);
+    }
+  }, [avatar]);
+
+  if (!avatar || avatar.trim() === '' || hasError) {
+    return (
+      <View style={[style, { backgroundColor: colors.brandGreen, borderRadius: style.width / 2, alignItems: 'center', justifyContent: 'center' }]}>
+        <Text style={{ fontSize: 16, fontWeight: 'bold', color: colors.darkBackground }}>
+          {displayName.charAt(0).toUpperCase()}
+        </Text>
+      </View>
+    );
+  }
+
+  return (
+    <View style={style}>
+      {isLoading && (
+        <View style={[style, { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: colors.darkBorder, borderRadius: style.width / 2, justifyContent: 'center', alignItems: 'center' }]}>
+          <ActivityIndicator size="small" color={colors.primaryGreen} />
+        </View>
+      )}
+      <Image 
+        source={{ uri: avatar }} 
+        style={[style, { opacity: isLoading ? 0 : 1 }]}
+        onLoadStart={() => setIsLoading(true)}
+        onLoad={() => setIsLoading(false)}
+        onError={() => {
+          setIsLoading(false);
+          setHasError(true);
+        }}
+      />
+    </View>
+  );
+};
 
 
 const DashboardScreen: React.FC<any> = ({ navigation }) => {
@@ -743,15 +785,15 @@ const DashboardScreen: React.FC<any> = ({ navigation }) => {
   const getTransactionIcon = (transaction: Transaction) => {
     switch (transaction.type) {
       case 'send':
-        return require('../../../assets/icon-send.png');
+        return { uri: 'https://firebasestorage.googleapis.com/v0/b/wesplit-35186.firebasestorage.app/o/visuals-app%2Ficon-send.png?alt=media&token=d733fbce-e383-4cae-bd93-2fc16c36a2d9' };
       case 'receive':
-        return require('../../../assets/icon-receive.png');
+        return { uri: 'https://firebasestorage.googleapis.com/v0/b/wesplit-35186.firebasestorage.app/o/visuals-app%2Ficon-receive.png?alt=media&token=c55d7c97-b027-4841-859e-38c46c2f36c5' };
       case 'deposit':
-        return require('../../../assets/icon-deposit.png');
+        return { uri: 'https://firebasestorage.googleapis.com/v0/b/wesplit-35186.firebasestorage.app/o/visuals-app%2Ficon-deposit.png?alt=media&token=d832bae5-dc8e-4347-bab5-cfa9621a5c55' };
       case 'withdraw':
-        return require('../../../assets/icon-withdraw.png');
+        return { uri: 'https://firebasestorage.googleapis.com/v0/b/wesplit-35186.firebasestorage.app/o/visuals-app%2Ficon-withdraw.png?alt=media&token=8c0da99e-287c-4d19-8515-ba422430b71b' };
       default:
-        return require('../../../assets/icon-send.png');
+        return { uri: 'https://firebasestorage.googleapis.com/v0/b/wesplit-35186.firebasestorage.app/o/visuals-app%2Ficon-send.png?alt=media&token=d733fbce-e383-4cae-bd93-2fc16c36a2d9' };
     }
   };
 
@@ -905,8 +947,8 @@ const DashboardScreen: React.FC<any> = ({ navigation }) => {
               <Image
                 source={
                   transactionType === 'send' 
-                    ? require('../../../assets/icon-send.png')
-                    : require('../../../assets/icon-receive.png')
+                    ? { uri: 'https://firebasestorage.googleapis.com/v0/b/wesplit-35186.firebasestorage.app/o/visuals-app%2Ficon-send.png?alt=media&token=d733fbce-e383-4cae-bd93-2fc16c36a2d9' }
+                    : { uri: 'https://firebasestorage.googleapis.com/v0/b/wesplit-35186.firebasestorage.app/o/visuals-app%2Ficon-receive.png?alt=media&token=c55d7c97-b027-4841-859e-38c46c2f36c5' }
                 }
                 style={styles.transactionAvatar}
               />
@@ -978,8 +1020,8 @@ const DashboardScreen: React.FC<any> = ({ navigation }) => {
               <Image
                 source={
                   transactionType === 'send' 
-                    ? require('../../../assets/icon-send.png')
-                    : require('../../../assets/icon-receive.png')
+                    ? { uri: 'https://firebasestorage.googleapis.com/v0/b/wesplit-35186.firebasestorage.app/o/visuals-app%2Ficon-send.png?alt=media&token=d733fbce-e383-4cae-bd93-2fc16c36a2d9' }
+                    : { uri: 'https://firebasestorage.googleapis.com/v0/b/wesplit-35186.firebasestorage.app/o/visuals-app%2Ficon-receive.png?alt=media&token=c55d7c97-b027-4841-859e-38c46c2f36c5' }
                 }
                 style={styles.transactionAvatar}
               />
@@ -1109,12 +1151,9 @@ const DashboardScreen: React.FC<any> = ({ navigation }) => {
         <View style={styles.header}>
           <View style={styles.headerLeft}>
             <TouchableOpacity onPress={() => navigation.navigate('Profile')}>
-              <Image
-                source={
-                  currentUser?.avatar
-                    ? { uri: currentUser.avatar }
-                    : require('../../../assets/user.png')
-                }
+              <AvatarComponent
+                avatar={currentUser?.avatar}
+                displayName={currentUser?.name || currentUser?.email?.split('@')[0] || 'User'}
                 style={styles.profileImage}
               />
             </TouchableOpacity>
@@ -1186,7 +1225,7 @@ const DashboardScreen: React.FC<any> = ({ navigation }) => {
                 onPress={() => setQrCodeModalVisible(true)}
               >
                 <Image
-                  source={require('../../../assets/qr-code-scan.png')}
+                  source={{ uri: 'https://firebasestorage.googleapis.com/v0/b/wesplit-35186.firebasestorage.app/o/visuals-app%2Fqr-code-scan.png?alt=media&token=3fc388bd-fdf7-4863-a8b1-9313490d6382' }}
                   style={styles.qrCodeImage}
                 />
               </TouchableOpacity>
@@ -1210,7 +1249,7 @@ const DashboardScreen: React.FC<any> = ({ navigation }) => {
               <View style={{ flex: 1, alignItems: 'flex-start' }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
                   <Image
-                    source={require('../../../assets/usdc-logo-black.png')}
+                    source={{ uri: 'https://firebasestorage.googleapis.com/v0/b/wesplit-35186.firebasestorage.app/o/visuals-app%2Fusdc-logo-black.png?alt=media&token=2b33d108-f3aa-471d-b7fe-6166c53c1d56' }}
                     style={styles.balanceUsdcLogo}
                   />
                   <Text style={[styles.balanceAmount, { textAlign: 'left', alignSelf: 'flex-start' }]}>
@@ -1268,7 +1307,7 @@ const DashboardScreen: React.FC<any> = ({ navigation }) => {
             >
               <View style={styles.actionButtonCircle}>
                 <Image
-                  source={require('../../../assets/icon-send.png')}
+                  source={{ uri: 'https://firebasestorage.googleapis.com/v0/b/wesplit-35186.firebasestorage.app/o/visuals-app%2Ficon-send.png?alt=media&token=d733fbce-e383-4cae-bd93-2fc16c36a2d9' }}
                   style={styles.actionButtonIcon}
                 />
               </View>
@@ -1281,7 +1320,7 @@ const DashboardScreen: React.FC<any> = ({ navigation }) => {
             >
               <View style={styles.actionButtonCircle}>
                 <Image
-                  source={require('../../../assets/icon-receive.png')}
+                  source={{ uri: 'https://firebasestorage.googleapis.com/v0/b/wesplit-35186.firebasestorage.app/o/visuals-app%2Ficon-receive.png?alt=media&token=c55d7c97-b027-4841-859e-38c46c2f36c5' }}
                   style={styles.actionButtonIcon}
                 />
               </View>
@@ -1294,7 +1333,7 @@ const DashboardScreen: React.FC<any> = ({ navigation }) => {
             >
               <View style={styles.actionButtonCircle}>
                 <Image
-                  source={require('../../../assets/icon-deposit.png')}
+                  source={{ uri: 'https://firebasestorage.googleapis.com/v0/b/wesplit-35186.firebasestorage.app/o/visuals-app%2Ficon-deposit.png?alt=media&token=d832bae5-dc8e-4347-bab5-cfa9621a5c55' }}
                   style={styles.actionButtonIcon}
                 />
               </View>
@@ -1309,7 +1348,7 @@ const DashboardScreen: React.FC<any> = ({ navigation }) => {
             >
               <View style={styles.actionButtonCircle}>
                 <Image
-                  source={require('../../../assets/icon-withdraw.png')}
+                  source={{ uri: 'https://firebasestorage.googleapis.com/v0/b/wesplit-35186.firebasestorage.app/o/visuals-app%2Ficon-withdraw.png?alt=media&token=8c0da99e-287c-4d19-8515-ba422430b71b' }}
                   style={styles.actionButtonIcon}
                 />
               </View>
@@ -1378,7 +1417,7 @@ const DashboardScreen: React.FC<any> = ({ navigation }) => {
                           {/* Show USD-converted total */}
                           <View style={styles.groupGridAmountContainer}>
                             <Image
-                              source={require('../../../assets/usdc-logo-black.png')}
+                              source={{ uri: 'https://firebasestorage.googleapis.com/v0/b/wesplit-35186.firebasestorage.app/o/visuals-app%2Fusdc-logo-black.png?alt=media&token=2b33d108-f3aa-471d-b7fe-6166c53c1d56' }}
                               style={styles.usdcLogo}
                             />
                             <Text style={styles.groupGridAmount}>

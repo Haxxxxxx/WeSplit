@@ -23,7 +23,7 @@ const GetStartedScreen: React.FC<GetStartedScreenProps> = ({ navigation }) => {
         {/* Hero Spiral Image */}
         <View style={styles.heroSection}>
           <Image 
-            source={require('../../../assets/GetStartedImage.png')} 
+            source={{ uri: 'https://firebasestorage.googleapis.com/v0/b/wesplit-35186.firebasestorage.app/o/visuals-app%2FGetStartedImage.png?alt=media&token=ef899285-2d3e-4d85-90a4-202a979cbc09' }} 
             style={styles.heroImage}
             resizeMode="contain"
           />
