@@ -4,15 +4,15 @@ const admin = require('firebase-admin');
 // MoonPay configuration
 const MOONPAY_CONFIG = {
   sandbox: {
-    apiKey: 'pk_live_37P9eF61y7Q7PZZp95q2kozulpBHYv7P',
-    secretKey: 'sk_live_xANcsPYYjcmU7EGIhZ9go0MKKbBoXH',
-    webhookSecret: 'wk_live_BIrcukm9OxPbAzDi6i4KcoewxAag0HBL',
+    apiKey: process.env.MOONPAY_API_KEY || 'YOUR_MOONPAY_API_KEY_HERE',
+    secretKey: process.env.MOONPAY_SECRET_KEY || 'YOUR_MOONPAY_SECRET_KEY_HERE',
+    webhookSecret: process.env.MOONPAY_WEBHOOK_SECRET || 'YOUR_MOONPAY_WEBHOOK_SECRET_HERE',
     baseUrl: 'https://buy-sandbox.moonpay.com'
   },
   production: {
-    apiKey: 'pk_live_37P9eF61y7Q7PZZp95q2kozulpBHYv7P',
-    secretKey: 'sk_live_xANcsPYYjcmU7EGIhZ9go0MKKbBoXH',
-    webhookSecret: 'wk_live_BIrcukm9OxPbAzDi6i4KcoewxAag0HBL',
+    apiKey: process.env.MOONPAY_API_KEY || 'YOUR_MOONPAY_API_KEY_HERE',
+    secretKey: process.env.MOONPAY_SECRET_KEY || 'YOUR_MOONPAY_SECRET_KEY_HERE',
+    webhookSecret: process.env.MOONPAY_WEBHOOK_SECRET || 'YOUR_MOONPAY_WEBHOOK_SECRET_HERE',
     baseUrl: 'https://buy.moonpay.com'
   }
 };
@@ -397,4 +397,4 @@ module.exports = {
   moonpayWebhook,
   getMoonPayTransactionStatus,
   getUserMoonPayTransactions
-}; 
+};
