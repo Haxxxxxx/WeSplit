@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, TextInput, Image, Alert, ActivityIndicator, SafeAreaView } from 'react-native';
+import { View, Text, TouchableOpacity, TextInput, Image, Alert, ActivityIndicator, SafeAreaView, Linking } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { styles, BG_COLOR, GREEN, GRAY } from './styles';
 import { verifyCode, sendVerificationCode } from '../../services/firebaseAuthService';
@@ -161,13 +161,13 @@ const VerificationScreen: React.FC = () => {
     <View style={styles.scrollContent}>
         {/* Logo Section */}
         <View style={styles.logoSection}>
-          <Image source={require('../../../assets/WeSplitLogoName.png')} style={styles.logo} />
+          <Image source={{ uri: 'https://firebasestorage.googleapis.com/v0/b/wesplit-35186.firebasestorage.app/o/visuals-app%2FWeSplitLogoName.png?alt=media&token=f785d9b1-f4e8-4f51-abac-e17407e4a48f' }} style={styles.logo} />
         </View>
 
       {/* Main Content */}
       <View style={styles.centerContent}>
         <View style={styles.mailIconBox}>
-          <Image source={require('../../../assets/mail.png')} style={styles.mailIcon} />
+          <Image source={{ uri: 'https://firebasestorage.googleapis.com/v0/b/wesplit-35186.firebasestorage.app/o/visuals-app%2Fmail.png?alt=media&token=5e3ac6e7-79b1-47e7-8087-f7e4c070d222' }} style={styles.mailIcon} />
         </View>
         <Text style={styles.title}>Check your Email</Text>
         <Text style={styles.subtitle}>
@@ -223,7 +223,7 @@ const VerificationScreen: React.FC = () => {
 
       {/* Help Link */}
       <View style={styles.helpSection}>
-        <TouchableOpacity>
+        <TouchableOpacity onPress={() => Linking.openURL('https://t.me/wesplit_support_bot')}>
           <Text style={styles.helpText}>Need help?</Text>
         </TouchableOpacity>
       </View>

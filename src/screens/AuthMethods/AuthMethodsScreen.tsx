@@ -9,7 +9,8 @@ import {
   Alert,
   ScrollView,
   KeyboardAvoidingView,
-  Platform
+  Platform,
+  Linking
 } from 'react-native';
 import { useNavigation, NavigationProp } from '@react-navigation/native';
 import { styles } from './styles';
@@ -489,7 +490,8 @@ const AuthMethodsScreen: React.FC = () => {
       >
         {/* Logo Section */}
         <View style={styles.logoSection}>
-          <Image source={require('../../../assets/WeSplitLogoName.png')} style={styles.logo} />
+          <Image source={{ uri: 'https://firebasestorage.googleapis.com/v0/b/wesplit-35186.firebasestorage.app/o/visuals-app%2FWeSplitLogoName.png?alt=media&token=f785d9b1-f4e8-4f51-abac-e17407e4a48f' }} style={styles.logo} />
+        
         </View>
 
         <View style={styles.contentContainer}>
@@ -503,7 +505,7 @@ const AuthMethodsScreen: React.FC = () => {
               onPress={() => handleSocialAuth('google')}
               disabled={loading || socialLoading !== null}
             >
-              <Image source={require('../../../assets/google.png')} style={styles.socialIcon} />
+              <Image source={{ uri: 'https://firebasestorage.googleapis.com/v0/b/wesplit-35186.firebasestorage.app/o/visuals-app%2Fgoogle.png?alt=media&token=76efeba8-dc73-4ed3-bf5c-f28bd0ae6fdd' }} style={styles.socialIcon} />
               <Text style={styles.socialButtonText}>
                 {socialLoading === 'google' ? getSocialLoadingText('google') : 'Continue with Google'}
               </Text>
@@ -517,7 +519,7 @@ const AuthMethodsScreen: React.FC = () => {
               onPress={() => handleSocialAuth('twitter')}
               disabled={loading || socialLoading !== null}
             >
-              <Image source={require('../../../assets/twitter.png')} style={styles.socialIcon} />
+              <Image source={{ uri: 'https://firebasestorage.googleapis.com/v0/b/wesplit-35186.firebasestorage.app/o/visuals-app%2Ftwitter.png?alt=media&token=470228c6-cb4e-4c39-9c40-563b7e707c43' }} style={styles.socialIcon} />
               <Text style={styles.socialButtonText}>
                 {socialLoading === 'twitter' ? getSocialLoadingText('twitter') : 'Continue with Twitter'}
               </Text>
@@ -531,7 +533,7 @@ const AuthMethodsScreen: React.FC = () => {
               onPress={() => handleSocialAuth('apple')}
               disabled={loading || socialLoading !== null}
             >
-              <Image source={require('../../../assets/apple.png')} style={styles.socialIcon} />
+              <Image source={{ uri: 'https://firebasestorage.googleapis.com/v0/b/wesplit-35186.firebasestorage.app/o/visuals-app%2Fapple.png?alt=media&token=783e0e17-b215-4532-896b-6333cc667c5b' }} style={styles.socialIcon} />
               <Text style={styles.socialButtonText}>
                 {socialLoading === 'apple' ? getSocialLoadingText('apple') : 'Continue with Apple'}
               </Text>
@@ -576,7 +578,7 @@ const AuthMethodsScreen: React.FC = () => {
 
         {/* Help Link */}
         <View style={styles.helpSection}>
-          <TouchableOpacity>
+          <TouchableOpacity onPress={() => Linking.openURL('https://t.me/wesplit_support_bot')}>
             <Text style={styles.helpText}>Need help?</Text>
           </TouchableOpacity>
         </View>

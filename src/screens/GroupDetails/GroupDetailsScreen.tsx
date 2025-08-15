@@ -553,7 +553,7 @@ const GroupDetailsScreen: React.FC<any> = ({ navigation, route }) => {
         <Image
           source={{ uri: avatar }}
           style={styles.expenseAvatarImage}
-          defaultSource={require('../../../assets/user.png')}
+                      defaultSource={{ uri: 'https://firebasestorage.googleapis.com/v0/b/wesplit-35186.firebasestorage.app/o/visuals-app%2Fuser.png?alt=media&token=2f63fec7-5324-4c87-8e31-4c7c6f789d6f' }}
         />
       );
     }
@@ -610,7 +610,7 @@ const GroupDetailsScreen: React.FC<any> = ({ navigation, route }) => {
           <Image
             source={{ uri: avatar }}
             style={styles.memberBalanceAvatarImage}
-            defaultSource={require('../../../assets/user.png')}
+            defaultSource={{ uri: 'https://firebasestorage.googleapis.com/v0/b/wesplit-35186.firebasestorage.app/o/visuals-app%2Fuser.png?alt=media&token=2f63fec7-5324-4c87-8e31-4c7c6f789d6f' }}
           />
         </View>
       );
@@ -707,7 +707,7 @@ const GroupDetailsScreen: React.FC<any> = ({ navigation, route }) => {
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.navigate('Dashboard')} style={styles.backButton}>
           <Image
-            source={require('../../../assets/arrow-left.png')}
+            source={{ uri: 'https://firebasestorage.googleapis.com/v0/b/wesplit-35186.firebasestorage.app/o/visuals-app%2Farrow-left.png?alt=media&token=103ee202-f6fd-4303-97b5-fe0138186378' }}
             style={styles.iconWrapper}
           />
         </TouchableOpacity>
@@ -757,7 +757,7 @@ const GroupDetailsScreen: React.FC<any> = ({ navigation, route }) => {
             <View style={styles.spendingInfo}>
               <Text style={styles.spendingLabel}>Total spending</Text>
               <View style={styles.spendingAmountContainer}>
-                <Image source={require('../../../assets/usdc-logo-black.png')} style={styles.spendingAmountIcon} />
+                <Image source={{ uri: 'https://firebasestorage.googleapis.com/v0/b/wesplit-35186.firebasestorage.app/o/visuals-app%2Fusdc-logo-black.png?alt=media&token=2b33d108-f3aa-471d-b7fe-6166c53c1d56' }} style={styles.spendingAmountIcon} />
                 <Text style={styles.spendingAmount}>
                   {getGroupSummary.totalAmountDisplay || '$0.00'}
                 </Text>
@@ -855,7 +855,7 @@ const GroupDetailsScreen: React.FC<any> = ({ navigation, route }) => {
                 >
                   <View style={styles.settlementCardInfos}>
                     <View style={styles.settlementCardIcon}>
-                      <Image source={require('../../../assets/icon-send.png')} style={{ width: 20, height: 20 }} />
+                      <Image source={{ uri: 'https://firebasestorage.googleapis.com/v0/b/wesplit-35186.firebasestorage.app/o/visuals-app%2Ficon-send.png?alt=media&token=d733fbce-e383-4cae-bd93-2fc16c36a2d9' }} style={{ width: 20, height: 20 }} />
                     </View>
                     <View style={styles.settlementCardContent}>
                       <Text style={styles.settlementCardTitleBlack}>
@@ -883,7 +883,7 @@ const GroupDetailsScreen: React.FC<any> = ({ navigation, route }) => {
                 >
                   <View style={styles.settlementCardInfos}>
                     <View style={styles.settlementCardIcon}>
-                      <Image source={require('../../../assets/icon-receive.png')} style={{ width: 20, height: 20 }} />
+                      <Image source={{ uri: 'https://firebasestorage.googleapis.com/v0/b/wesplit-35186.firebasestorage.app/o/visuals-app%2Ficon-receive.png?alt=media&token=c55d7c97-b027-4841-859e-38c46c2f36c5' }} style={{ width: 20, height: 20 }} />
                     </View>
                     <View style={styles.settlementCardContent}>
                       <Text style={styles.settlementCardTitle}>
@@ -915,7 +915,7 @@ const GroupDetailsScreen: React.FC<any> = ({ navigation, route }) => {
                   >
                     <View style={styles.settlementCardSmallInfos}>
                     <View style={styles.settlementAvatar}>
-                      <Image source={require('../../../assets/icon-send.png')} style={{ width: 20, height: 20 }} />
+                      <Image source={{ uri: 'https://firebasestorage.googleapis.com/v0/b/wesplit-35186.firebasestorage.app/o/visuals-app%2Ficon-send.png?alt=media&token=d733fbce-e383-4cae-bd93-2fc16c36a2d9' }} style={{ width: 20, height: 20 }} />
                     </View>
                     <View style={styles.settlementInfo}>
                       <Text style={styles.settlementTitleBlack}>
@@ -941,7 +941,7 @@ const GroupDetailsScreen: React.FC<any> = ({ navigation, route }) => {
                   >
                     <View style={styles.settlementCardSmallInfos}>
                       <View style={styles.settlementAvatar}>
-                        <Image source={require('../../../assets/icon-receive.png')} style={{ width: 20, height: 20 }} />
+                        <Image source={{ uri: 'https://firebasestorage.googleapis.com/v0/b/wesplit-35186.firebasestorage.app/o/visuals-app%2Ficon-receive.png?alt=media&token=c55d7c97-b027-4841-859e-38c46c2f36c5' }} style={{ width: 20, height: 20 }} />
                       </View>
                       <View style={styles.settlementInfo}>
                         <Text style={styles.settlementTitle}>
