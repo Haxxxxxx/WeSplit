@@ -11,7 +11,6 @@ import {
   ScrollView,
   ActionSheetIOS,
   Platform,
-  Linking,
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useApp } from '../../context/AppContext';
@@ -202,7 +201,7 @@ const CreateProfileScreen: React.FC = () => {
     <SafeAreaView style={styles.container}>
         {/* Logo Section */}
         <View style={styles.logoSection}>
-          <Image source={{ uri: 'https://firebasestorage.googleapis.com/v0/b/wesplit-35186.firebasestorage.app/o/visuals-app%2FWeSplitLogoName.png?alt=media&token=f785d9b1-f4e8-4f51-abac-e17407e4a48f' }} style={styles.logo} />
+          <Image source={require('../../../assets/WeSplitLogoName.png')} style={styles.logo} />
         </View>
 
       {/* Main Content */}
@@ -218,11 +217,11 @@ const CreateProfileScreen: React.FC = () => {
             <Image source={{ uri: avatar }} style={styles.avatarImage} />
           ) : (
             <View style={styles.avatarPlaceholder}>
-                              <Image source={{ uri: 'https://firebasestorage.googleapis.com/v0/b/wesplit-35186.firebasestorage.app/o/visuals-app%2Fuser.png?alt=media&token=2f63fec7-5324-4c87-8e31-4c7c6f789d6f' }} style={styles.avatarIcon} />
+              <Image source={require('../../../assets/user.png')} style={styles.avatarIcon} />
             </View>
           )}
           <View style={styles.cameraIconContainer}>
-                            <Image source={{ uri: 'https://firebasestorage.googleapis.com/v0/b/wesplit-35186.firebasestorage.app/o/visuals-app%2Fmodify-icon-white.png?alt=media&token=4b1aa40d-4d81-4e40-9d3b-9638bc589e21' }} style={styles.cameraIcon} />
+            <Image source={require('../../../assets/modify-icon-white.png')} style={styles.cameraIcon} />
           </View>
         </TouchableOpacity>
         
@@ -256,9 +255,9 @@ const CreateProfileScreen: React.FC = () => {
 
       {/* Help Link */}
       <View style={styles.helpSection}>
-        <TouchableOpacity onPress={() => Linking.openURL('https://t.me/wesplit_support_bot')}>
-          <Text style={styles.helpText}>Need help?</Text>
-        </TouchableOpacity>
+        <TouchableOpacity>
+        <Text style={styles.helpText}>Need help?</Text>
+      </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
